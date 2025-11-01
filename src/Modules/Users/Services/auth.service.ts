@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { IUser, OtpTypesEnum } from "../../../Common";
+import { IRequest, IUser, OtpTypesEnum } from "../../../Common";
 import { UserRepository } from "../../../DB/Repositories/user.repository";
 import { UserModel } from "../../../DB/Models";
 import {encrypt , generateHash, compareHash} from "../../../Utils";
@@ -8,14 +8,15 @@ import { generateToken } from "../../../Utils/Encryption/token.utils";
 import { SignOptions } from "jsonwebtoken";
 import { v4 as uuidv4 } from 'uuid';
 import { compareSync } from "bcrypt";
-
+import { BlackListedTokenRepository } from "../../../DB/Repositories";
+import { BlackListedTokenModel } from "../../../DB/Models";
 
 
 
 class AuthService{
 
     private userRepo : UserRepository = new UserRepository(UserModel)
-    
+    private blackListedRepo : BlackListedTokenRepository = new BlackListedTokenRepository(BlackListedTokenModel)
 
     // SignUp
     signUp =async (req:Request, res:Response, next:NextFunction)=> {
@@ -87,7 +88,7 @@ class AuthService{
 
         const accessToken = generateToken(
         {
-            id : user._id,
+            _id : user._id,
             email: user.email,
             provider: user.provider,
             role: user.role
@@ -100,7 +101,7 @@ class AuthService{
         )
         const refreshToken = generateToken(
             {
-            id : user._id,
+            _id : user._id,
             email: user.email,
             provider: user.provider,
             role: user.role
@@ -114,7 +115,12 @@ class AuthService{
         return res.status(200).json({message:'User logged in successfully', data:{user, accessToken, refreshToken}})
     }
 
-
+    // Logout
+    logout = async (req:Request, res:Response)=> {
+        const {token: {jti , exp}} = (req as unknown as IRequest).loggedInUser
+        const blackListedToken = await this.blackListedRepo.createNewDocument({tokenId:jti, expiresAt: new Date(exp || Date.now() + 600000)})
+        return res.status(200).json({message:'User logged out successfully', data: {blackListedToken}})
+    }
 
 }
 

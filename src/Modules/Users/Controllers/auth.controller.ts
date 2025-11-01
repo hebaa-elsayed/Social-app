@@ -1,6 +1,6 @@
 import { Router } from "express";
 import AuthService from '../Services/auth.service'
-import { authentication } from "../../../Middleware/authentication.middleware";
+import { authentication } from "../../../Middleware";
 const authController = Router();
 
 
@@ -11,10 +11,17 @@ authController.post('/login' ,AuthService.signIn )
 //confirm email
 authController.post('/confirm-email', AuthService.confirmEmail);
 //Forgot Password
+
 //Reset Password
+
 //Authentication with gmail
+
 //Resend confirmation email
 
+//Resend Email
+
+// Logout
+authController.post('/logout', authentication, AuthService.logout)
 
 
 export {authController}
