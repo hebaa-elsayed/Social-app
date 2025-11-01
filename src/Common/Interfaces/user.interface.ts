@@ -30,6 +30,11 @@ interface IUser extends Document {
 
 
 
+interface IBlackListedToken extends Document{
+    tokenId:string;
+    expiresAt:Date;
+}
+
 interface IEmailArgument {
     to:string;
     cc?:string;
@@ -42,4 +47,4 @@ interface IRequest extends Request {
     loggedInUser:{ user: IUser , token :JwtPayload}
 }
 
-export {IUser , IEmailArgument , IRequest}
+export {IUser , IEmailArgument , IRequest , IBlackListedToken}
