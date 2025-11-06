@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express, { NextFunction, Request, Response } from 'express';
 import * as controllers from './Modules/controllers.index';
 import { dbConnection } from './DB/db.connection';
+import { HttpException , FailedResponse} from './Utils';
+
 const app = express();
 
 app.use(express.json());
@@ -18,14 +20,17 @@ app.use('/api/reacts', controllers.reactController);
 // app.use('/api/notifications', controllers.notificationController);
 
 // error handling middleware
-app.use((err:Error|null, req:Request , res:Response, next:NextFunction)=>{
-    const status = 500
-    const message = 'Something went wrong'
-    return res.status(status).json({message:err?.message || message})
-})
+app.use((err: HttpException |Error|null, req:Request , res:Response, next:NextFunction)=>{
+    if(err){
+        if(err instanceof HttpException){
+            res.status(err.statusCode).json(FailedResponse(err.message, err.statusCode, err.error))
+    }else{
+        res.status(500).json(FailedResponse('Something went wrong', 500, err))
+    }
+}})
 
 
-const port:number | string = process.env.PORT || 5000
+const port:number | string = process.env.PORT || 3000
 app.listen(port, () => {
     console.log('Server is running on port ' + port);
 })
