@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { IRequest, IUser, OtpTypesEnum } from "../../../Common";
 import { UserRepository } from "../../../DB/Repositories/user.repository";
 import { UserModel } from "../../../DB/Models";
-import {encrypt , generateHash, compareHash} from "../../../Utils";
+import {encrypt , generateHash, compareHash, ConflictException, FailedResponse, SuccessResponse} from "../../../Utils";
 import {localEmitter} from "../../../Utils/Services/email.utils"
 import { generateToken } from "../../../Utils/Encryption/token.utils";
 import { SignOptions } from "jsonwebtoken";
@@ -10,7 +10,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { compareSync } from "bcrypt";
 import { BlackListedTokenRepository } from "../../../DB/Repositories";
 import { BlackListedTokenModel } from "../../../DB/Models";
-
 
 
 class AuthService{
@@ -24,7 +23,7 @@ class AuthService{
 
         const isEmailExist = await this.userRepo.findOneDocument({email}, 'email')
         if(isEmailExist){
-            return res.status(409).json({message:'Email already exists', data:{invalidEmail:email }})
+            throw next(new ConflictException('Email already exists', {invalidEmail:email}))
         }
         // Encrypt phone number
         const encryptedNumber = encrypt(phoneNumber as string)
@@ -47,7 +46,7 @@ class AuthService{
 
         const newUser = await this.userRepo.createNewDocument({
             firstName, lastName, email, password:hashedPassword, DOB, gender, phoneNumber:encryptedNumber, OTPS:[confirmationOtp]})
-        return res.status(201).json({message:'User created successfully', data:{newUser}})
+        return res.status(201).json(SuccessResponse<IUser>('User created successfully', 201, newUser))
     }
 
 
@@ -70,7 +69,7 @@ class AuthService{
     user.OTPS = [];
     await user.save();
 
-    return res.status(200).json({ message: 'Email confirmed successfully' });
+    return res.status(200).json(SuccessResponse('Email confirmed successfully', 200));
     };
 
     // Sign in 
@@ -112,14 +111,14 @@ class AuthService{
             jwtid: uuidv4()
         }
         )
-        return res.status(200).json({message:'User logged in successfully', data:{user, accessToken, refreshToken}})
+        return res.status(200).json(SuccessResponse('User logged in successfully', 200, { tokens : {accessToken, refreshToken}}))
     }
 
     // Logout
     logout = async (req:Request, res:Response)=> {
         const {token: {jti , exp}} = (req as unknown as IRequest).loggedInUser
         const blackListedToken = await this.blackListedRepo.createNewDocument({tokenId:jti, expiresAt: new Date(exp || Date.now() + 600000)})
-        return res.status(200).json({message:'User logged out successfully', data: {blackListedToken}})
+        return res.status(200).json(SuccessResponse('User logged out successfully', 200, {blackListedToken}))
     }
 
 }
