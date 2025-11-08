@@ -17,12 +17,17 @@ export abstract class BaseRepository<T>{
         return await this.model.findById(id, projection, options)
     }
 
-
+    async deleteByIdDocument(id:mongoose.Schema.Types.ObjectId){
+        return await this.model.findByIdAndDelete(id)
+    }
+    
     updateOneDocument(){}
 
     updateMultipleDocuments(){}
 
     deleteOneDocument(){}
+
+    
 
     deleteMultipleDocuments(){}
 

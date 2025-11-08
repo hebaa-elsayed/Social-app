@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express"
 import { JwtPayload } from "jsonwebtoken"
 
-import { verifyToken, HttpException, BadRequestException } from "../Utils"
+import { verifyToken, HttpException, BadRequestException, FailedResponse } from "../Utils"
 import { IRequest, IUser } from "../Common"
 import { UserRepository , BlackListedTokenRepository} from "../DB/Repositories"
 import { UserModel , BlackListedTokenModel } from "../DB/Models"
@@ -20,7 +20,7 @@ export const authentication = async (req:Request,res:Response, next:NextFunction
     if(!decodedData._id) throw next(new Error('Invalid payload'))
     
     const blackListedToken = await blackListedRepo.findOneDocument({tokenId:decodedData.jti})
-    if(blackListedToken) throw next(new Error(' Your session is expired please login '))
+    if(blackListedToken) return next(new HttpException('Your session is expired please login',401,{ tokenId: decodedData.jti, expiredAt: decodedData.exp }));
 
     const user:IUser|null = await userRepo.findDocumentById( decodedData._id, '-password' )
     if(!user) throw next(new Error('Please register first'));
