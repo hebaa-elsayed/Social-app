@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { IRequest, IUser, OtpTypesEnum } from "../../../Common";
+import { IRequest, IUser, OtpTypesEnum, SignUpBodyType } from "../../../Common";
 import { UserRepository } from "../../../DB/Repositories/user.repository";
 import { UserModel } from "../../../DB/Models";
 import {encrypt , generateHash, compareHash, ConflictException, FailedResponse, SuccessResponse} from "../../../Utils";
@@ -19,7 +19,7 @@ class AuthService{
 
     // SignUp
     signUp =async (req:Request, res:Response, next:NextFunction)=> {
-        const {firstName, lastName, email, password, DOB, gender, phoneNumber}: Partial<IUser> = req.body
+        const {firstName, lastName, email, password, DOB, gender, phoneNumber}: SignUpBodyType = req.body
 
         const isEmailExist = await this.userRepo.findOneDocument({email}, 'email')
         if(isEmailExist){
