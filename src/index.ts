@@ -25,8 +25,11 @@ app.use((err: HttpException |Error|null, req:Request , res:Response, next:NextFu
         if(err instanceof HttpException){
             res.status(err.statusCode).json(FailedResponse(err.message, err.statusCode, err.error))
     }else{
-        res.status(500).json(FailedResponse('Something went wrong', 500, err))
-    }
+        if (err instanceof Error) {res.status(500).json(FailedResponse(err.message || 'Something went wrong',500,{name: err.name, message: err.message, stack: err.stack}));
+            } else {
+                res.status(500).json(FailedResponse('Unknown error', 500, err));
+            }
+        }
 }})
 
 
