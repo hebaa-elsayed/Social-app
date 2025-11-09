@@ -14,16 +14,15 @@ export const authentication = async (req:Request,res:Response, next:NextFunction
     if(!accessToken) throw next(new BadRequestException('Please login first'))
 
     const [prefix, token] = accessToken.split(' ')
-    if(prefix !== process.env.JWT_PREFIX) throw next(new Error('Invalid token'))
-
+    if(prefix !== process.env.JWT_PREFIX) throw next(new BadRequestException('Invalid token'))
     const decodedData = verifyToken(token, process.env.JWT_ACCESS_SECRET as string)
-    if(!decodedData._id) throw next(new Error('Invalid payload'))
+    if(!decodedData._id) throw next(new BadRequestException('Invalid payload'))
     
     const blackListedToken = await blackListedRepo.findOneDocument({tokenId:decodedData.jti})
-    if(blackListedToken) return next(new HttpException('Your session is expired please login',401,{ tokenId: decodedData.jti, expiredAt: decodedData.exp }));
+    if(blackListedToken) throw next(new HttpException('Your session is expired please login',401,{ tokenId: decodedData.jti, expiredAt: decodedData.exp }));
 
     const user:IUser|null = await userRepo.findDocumentById( decodedData._id, '-password' )
-    if(!user) throw next(new Error('Please register first'));
+    if(!user) throw next(new BadRequestException('Please register first'));
     
     (req as unknown as IRequest).loggedInUser = {user, token:decodedData as JwtPayload}
     next()

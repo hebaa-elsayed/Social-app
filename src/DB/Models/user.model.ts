@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { GenderEnum, ProviderEnum, RoleEnum, IUser, OtpTypesEnum} from "../../Common";
+import { decrypt, encrypt, generateHash, S3ClientService } from "../../Utils";
 
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -61,6 +62,54 @@ const userSchema = new mongoose.Schema<IUser>({
         default: false
     }
 })
+
+// Document middleware
+userSchema.pre('save', function(){
+    console.log(this.isModified('password'));
+    console.log(this.modifiedPaths());
+    console.log(this.getChanges());
+    
+
+    if(this.isModified('password')){
+        this.password = generateHash(this.password as string) 
+    }
+
+
+    if(this.isModified('email')){
+        this.email = this.email.toLowerCase()
+    }
+
+    if(this.isModified('phoneNumber')){
+        this.phoneNumber = encrypt(this.phoneNumber as string)
+    }
+        
+})
+
+
+// Query middleware
+userSchema.post(/^find/, function(doc){
+    if((this as unknown as {op:string}).op == 'find'){
+        doc.forEach((user:IUser)=>{
+            if(user.phoneNumber){
+                user.phoneNumber = decrypt(user.phoneNumber as string)
+            }
+        })
+    } else {
+        doc.phoneNumber = decrypt(doc.phoneNumber as string)
+    }
+})
+
+
+const S3Service = new S3ClientService()
+userSchema.post('findOneAndDelete', async function(doc){
+    if(doc.profilePicture){
+        await S3Service.deleteFileFromS3(doc.profilePicture)
+    }
+    if(doc.coverPicture){
+        await S3Service.deleteFileFromS3(doc.coverPicture)
+    }
+}) 
+
 
 const UserModel = mongoose.model<IUser>('User' , userSchema)
 export {UserModel}

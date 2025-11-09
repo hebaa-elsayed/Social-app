@@ -25,12 +25,6 @@ class AuthService{
         if(isEmailExist){
             throw next(new ConflictException('Email already exists', {invalidEmail:email}))
         }
-        // Encrypt phone number
-        const encryptedNumber = encrypt(phoneNumber as string)
-
-        // hash password
-        const hashedPassword = generateHash(password as string)
-        
         //send OTP
         const otp = Math.floor(Math.random() * 1000000).toString()
         localEmitter.emit('sendEmail' , {
@@ -45,7 +39,7 @@ class AuthService{
         }
 
         const newUser = await this.userRepo.createNewDocument({
-            firstName, lastName, email, password:hashedPassword, DOB, gender, phoneNumber:encryptedNumber, OTPS:[confirmationOtp]})
+            firstName, lastName, email, password, DOB, gender, phoneNumber, OTPS:[confirmationOtp]})
         return res.status(201).json(SuccessResponse<IUser>('User created successfully', 201, newUser))
     }
 
