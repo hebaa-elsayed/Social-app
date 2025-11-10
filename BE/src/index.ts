@@ -3,9 +3,11 @@ import express, { NextFunction, Request, Response } from 'express';
 import * as controllers from './Modules/controllers.index';
 import { dbConnection } from './DB/db.connection';
 import { HttpException , FailedResponse} from './Utils';
-
+import cors from 'cors'
+import { ioInitializer } from './Gateways/socketIo.gateways';
 const app = express();
 
+app.use(cors())
 app.use(express.json());
 
 dbConnection ()
@@ -34,6 +36,9 @@ app.use((err: HttpException |Error|null, req:Request , res:Response, next:NextFu
 
 
 const port:number | string = process.env.PORT || 3000
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log('Server is running on port ' + port);
 })
+
+ioInitializer(server)
+
