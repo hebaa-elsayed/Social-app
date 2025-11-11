@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { BadRequestException, S3ClientService, SuccessResponse } from "../../../Utils";
-import { FriendshipStatusEnum, IFriendship, IRequest, IUser } from "../../../Common";
-import { FriendshipRepository, UserRepository } from "../../../DB/Repositories";
+import { FriendshipStatusEnum, IConversation, IFriendship, IRequest, IUser } from "../../../Common";
+import { FriendshipRepository, UserRepository, ConversationRepository } from "../../../DB/Repositories";
 import { UserModel } from "../../../DB/Models";
 import mongoose, { FilterQuery, Types } from "mongoose";
 
@@ -12,6 +12,7 @@ export class ProfileService{
     private s3Client = new S3ClientService()
     private userRepo = new UserRepository(UserModel)
     private friendshipRepo = new FriendshipRepository()
+    private conversationRepo = new ConversationRepository()
 
 
     uploadProfilePicture = async (req:Request, res:Response)=> {
@@ -134,8 +135,10 @@ export class ProfileService{
                     select:'firstName lastName profilePicture'
                 }
             ]})
+
+        const groups = await this.conversationRepo.findDocuments({type: 'group', members: {$in: _id}})
             
-        res.json(SuccessResponse<IFriendship[]>('Requests fetched successfuly', 200, requests))
+        res.json(SuccessResponse('Requests fetched successfuly', 200, {requests, groups}))
     }
 
     respondToFriendshipRequest = async (req:Request, res:Response)=> {
@@ -149,6 +152,30 @@ export class ProfileService{
         await friendRequest.save()
 
         res.json(SuccessResponse<IFriendship>('Friend request responded successfuly', 200, friendRequest))
+    }
+
+    createGroup = async (req:Request, res:Response)=> {
+        const {user:{_id}} = (req as IRequest).loggedInUser
+        const {name, memberIds} = req.body
+
+        const members = await this.userRepo.findDocuments({_id: {$in: memberIds}})
+        if(members.length !== memberIds.length) throw new BadRequestException('One or more members not found')
+
+        const friendship = await this.friendshipRepo.findDocuments({
+            $or:[
+                {requestFromId:_id, requestToId:{$in:memberIds}},
+                {requestToId:_id, requestFromId:{$in:memberIds}}
+            ],
+            status:FriendshipStatusEnum.ACCEPTED
+        })
+        if(!friendship.length) throw new BadRequestException('One or more members are not friends')
+        const group = await this.conversationRepo.createNewDocument({
+            name,
+            type: 'group',
+            members: [_id,...memberIds]
+        })
+
+        res.json(SuccessResponse('Group created successfuly', 200, group))
     }
 
 }

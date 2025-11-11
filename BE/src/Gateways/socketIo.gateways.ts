@@ -1,7 +1,7 @@
 import { Socket, Server } from "socket.io";
 import { Server as HttpServer } from "http";
 import { verifyToken } from "../Utils";
-
+import { ChatInitiation } from "../Modules/Chat/chat";
 
 
 export const connectedSockets = new Map<string, string[]>() //key: userId, value: socketId[]
@@ -9,8 +9,11 @@ let io : Server | null = null
 
 
 function socketAuthentication (socket: Socket, next: Function) {
-        const token = socket.handshake.auth.authorization
-
+        const {authorization} = socket.handshake.auth
+        if(!authorization){return next(new Error('Authentication required'))}
+        const [prefix, token] = authorization.split(' ')
+        if(prefix !== process.env.JWT_PREFIX) return next(new Error('Invalid prefix'))
+    
         const decodedData = verifyToken(token, process.env.JWT_ACCESS_SECRET as string)
         socket.data = { userId: decodedData._id}
 
@@ -18,6 +21,7 @@ function socketAuthentication (socket: Socket, next: Function) {
         if(!userTabs) connectedSockets.set(socket.data.userId, [socket.id])
         else userTabs.push(socket.id)
         
+        socket.emit('connected', {user:{_id: socket.data.userId, firstName: decodedData.firstName, lastName: decodedData.lastName}})
         next();
     }
 
@@ -43,6 +47,8 @@ export const ioInitializer = (server : HttpServer) => {
    
    
     io.on('connection', (socket: Socket) => {
+
+        ChatInitiation(socket)
         socketDisconnection(socket)
     })
     }

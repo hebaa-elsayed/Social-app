@@ -11,15 +11,16 @@ const blackListedRepo = new BlackListedTokenRepository(BlackListedTokenModel)
 
 export const authentication = async (req:Request,res:Response, next:NextFunction)=> {
     const {authorization : accessToken} = req.headers
-    if(!accessToken) throw next(new BadRequestException('Please login first'))
+    if(!accessToken) throw next(new HttpException('Please login first', 400))
 
     const [prefix, token] = accessToken.split(' ')
-    if(prefix !== process.env.JWT_PREFIX) throw next(new BadRequestException('Invalid token'))
+    if(prefix !== process.env.JWT_PREFIX) return res.status(401).json({message:'Invalid token'})
+    
     const decodedData = verifyToken(token, process.env.JWT_ACCESS_SECRET as string)
-    if(!decodedData._id) throw next(new BadRequestException('Invalid payload'))
+    if(!decodedData._id) return res.status(401).json({message:'Invalid payload'})
     
     const blackListedToken = await blackListedRepo.findOneDocument({tokenId:decodedData.jti})
-    if(blackListedToken) throw next(new HttpException('Your session is expired please login',401,{ tokenId: decodedData.jti, expiredAt: decodedData.exp }));
+    if(blackListedToken) return res.status(401).json({message:'Your session is expired please login'})
 
     const user:IUser|null = await userRepo.findDocumentById( decodedData._id, '-password' )
     if(!user) throw next(new BadRequestException('Please register first'));
