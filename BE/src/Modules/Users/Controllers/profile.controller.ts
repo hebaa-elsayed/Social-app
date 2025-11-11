@@ -31,10 +31,11 @@ profileController.post('/renew-signed-url', authentication, profileService.renew
 profileController.post('/send-friendship-request', authentication, profileService.sendFriendshipRequest)
 
 // List friendship requests
-profileController.get('/list-requests', authentication, profileService.listRequests)
+profileController.get('/list-friend-requests', authentication, profileService.listRequests)
 
 // Respond to friendship request
 profileController.patch('/respond-to-friendship-request', authentication, profileService.respondToFriendshipRequest)
-
+// Create group
+profileController.post('/create-group', authentication, profileService.createGroup)
 
 export { profileController };

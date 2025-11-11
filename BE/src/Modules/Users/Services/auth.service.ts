@@ -84,7 +84,10 @@ class AuthService{
             _id : user._id,
             email: user.email,
             provider: user.provider,
-            role: user.role
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            
         },
         process.env.JWT_ACCESS_SECRET as string,
         {

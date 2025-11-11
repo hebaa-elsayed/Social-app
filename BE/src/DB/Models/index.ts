@@ -1,3 +1,5 @@
 export * from './user.model'
 export * from './black-listed-tokens.model'
 export * from './frriendship.model'
+export * from './conversations.model'
+export * from './messages.model'
