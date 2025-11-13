@@ -28,7 +28,7 @@ export class S3ClientService {
         return await getSignedUrl(this.s3Client, getCommand, {expiresIn})
     }
 
-    async uploadFileOnS3 (file: Express.Multer.File, key : string){
+    async uploadFileOnS3(file: Express.Multer.File, key: string) {
         const keyName = `${this.key_folder}/${key}/${Date.now()}-${file.originalname}`;
         
         const params: IPutObjectCommandInput = {
@@ -39,11 +39,16 @@ export class S3ClientService {
             // ACL: 'public-read'
         }
         
-        const putCommand = new PutObjectCommand (params)
+        const putCommand = new PutObjectCommand(params);
 
         await this.s3Client.send(putCommand)
         const signedUrl = await this.getFileWithSignedUrl(keyName)
         return {key: keyName, url: signedUrl}
+    }
+
+    async uploadFilesOnS3(files: Express.Multer.File[], key: string) {
+        const keys = files.map(file => this.uploadFileOnS3(file, key));
+        return Promise.all(keys);
     }
 
 
