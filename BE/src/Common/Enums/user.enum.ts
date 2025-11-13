@@ -18,6 +18,7 @@ enum OtpTypesEnum{
     CONFIRMATION = 'confirmation',
     RESET_PASSWORD = 'reset-password',
     TWO_STEP_VERIFICATION = 'two-step-verification',
+    EMAIL_VERIFICATION = 'email-verification'
 }
 
 enum FriendshipStatusEnum{

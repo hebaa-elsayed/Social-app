@@ -5,3 +5,4 @@ export * from './Types/validators.types';
 export * from './Interfaces/comment.interface';
 export * from './Interfaces/post.interface';
 export * from './Interfaces/chat.interface';
+export * from './Interfaces/react.interface';

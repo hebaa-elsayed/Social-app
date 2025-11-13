@@ -27,6 +27,7 @@ interface IUser extends Document<mongoose.Schema.Types.ObjectId> {
     OTPS: IOTP[];
     isConfirmed: Boolean;
     twoStepVerification: Boolean;
+    unVerifiedEmail?:string | null;
 }
 
 
