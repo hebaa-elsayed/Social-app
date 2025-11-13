@@ -1,0 +1,2 @@
+[0mGET /api/users/list-friend-requests?status=accepted [32m200[0m 239.899 ms - 617[0m
+[0mPOST /api/users/profile-picture [32m200[0m 2203.311 ms - 690[0m
