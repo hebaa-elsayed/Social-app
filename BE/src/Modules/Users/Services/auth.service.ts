@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { IRequest, IUser, OtpTypesEnum, SignUpBodyType } from "../../../Common";
 import { UserRepository } from "../../../DB/Repositories/user.repository";
 import { UserModel } from "../../../DB/Models";
-import {encrypt , generateHash, compareHash, ConflictException, FailedResponse, SuccessResponse} from "../../../Utils";
+import {encrypt , generateHash, compareHash, ConflictException, FailedResponse, SuccessResponse, BadRequestException} from "../../../Utils";
 import {localEmitter} from "../../../Utils/Services/email.utils"
 import { generateToken } from "../../../Utils/Encryption/token.utils";
 import { SignOptions } from "jsonwebtoken";
@@ -79,6 +79,27 @@ class AuthService{
 
         if (!user.isConfirmed) {return res.status(403).json({ message: 'Please confirm your email first' })}
 
+        // ==================2-step verification ==================
+
+        if(user.twoStepVerification){
+            const otp = Math.floor(Math.random() * 1000000).toString();
+            const otpHash = generateHash(otp);
+            localEmitter.emit('sendEmail' , {
+                to:user.email,
+                subject:'Login OTP',
+                content:`Your login OTP is ${otp}`
+            })
+            
+            user.OTPS.push({
+                value:otpHash, 
+                expiresAt:Date.now() + 600000, 
+                otpType:OtpTypesEnum.TWO_STEP_VERIFICATION})
+            await user.save()
+            
+            return res.status(200).json(SuccessResponse('Login OTP sent successfully, please check your email', 200))
+        }
+
+        //=================generate tokens=======================
         const accessToken = generateToken(
         {
             _id : user._id,
@@ -110,6 +131,94 @@ class AuthService{
         )
         return res.status(200).json(SuccessResponse('User logged in successfully', 200, { tokens : {accessToken, refreshToken}}))
     }
+
+    // Verify login OTP
+    verifyLoginOtp = async (req:Request, res:Response)=> {
+        const user = (req as unknown as IRequest).loggedInUser.user
+        const {otp} = req.body
+
+        if(!user.OTPS || !user.OTPS.length){return res.status(401).json({message:'No OTP found, please try again'})}
+
+        const otpRecord = user.OTPS.find(o  => o.otpType === OtpTypesEnum.TWO_STEP_VERIFICATION && o.expiresAt > Date.now())
+        if (!otpRecord) {return res.status(401).json({ message: 'Invalid or expired OTP.' })}
+        const matchedOtp = compareSync(otp, otpRecord.value)
+        if (!matchedOtp) {return res.status(401).json({ message: 'Invalid or expired OTP' })}
+
+        user.OTPS = user.OTPS.filter(o => o !== otpRecord)
+        await user.save()
+    
+    //=====================Generate Tokens=======================
+    const accessToken = generateToken(
+        {
+            _id : user._id,
+            email: user.email,
+            provider: user.provider,
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            
+        },
+        process.env.JWT_ACCESS_SECRET as string,
+        {
+            expiresIn: process.env.JWT_ACCESS_EXPIRES_IN as SignOptions["expiresIn"],
+            jwtid: uuidv4()
+        }
+        )
+        const refreshToken = generateToken(
+            {
+            _id : user._id,
+            email: user.email,
+            provider: user.provider,
+            role: user.role
+        },
+        process.env.JWT_REFRESH_SECRET as string,
+        {
+            expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as SignOptions["expiresIn"],
+            jwtid: uuidv4()
+        }
+        )
+        return res.status(200).json(SuccessResponse('User logged in successfully', 200, { tokens : {accessToken, refreshToken}}))
+    }
+
+    // Enable two step verification
+    enableTwoStepVerification = async (req:Request, res:Response)=> {
+        const {user} = (req as unknown as IRequest).loggedInUser
+        
+        //send OTP
+        const otp = Math.floor(Math.random() * 1000000).toString();
+        const otpHash = generateHash(otp);
+        localEmitter.emit('sendEmail' , {
+            to:user.email,
+            subject:'OTP for Two Step Verification',
+            content:`Your OTP is ${otp}`
+        })
+        
+        user.OTPS.push({
+            value:otpHash, 
+            expiresAt:Date.now() + 600000, 
+            otpType:OtpTypesEnum.TWO_STEP_VERIFICATION})
+        await user.save()
+
+        return res.status(200).json(SuccessResponse('OTP sent successfully to your email', 200))
+    }
+
+    // Verify two step verification
+    verifyTwoStepVerification = async (req:Request, res:Response)=> {
+        const {user} = (req as unknown as IRequest).loggedInUser
+        const {otp} = req.body
+
+        const otpRecord = user.OTPS?.find(o => o.otpType === OtpTypesEnum.TWO_STEP_VERIFICATION && o.expiresAt > Date.now())
+        if (!otpRecord) {return res.status(401).json({ message: 'Invalid or expired OTP.' })}
+        const matchedOtp = compareSync(otp, otpRecord.value)
+        if (!matchedOtp) {return res.status(401).json({ message: 'Invalid or expired OTP' })}
+
+        user.twoStepVerification = true;
+        user.OTPS = user.OTPS?.filter(o => o !== otpRecord);
+        await user.save();
+
+        return res.status(200).json(SuccessResponse('Two step verification enabled successfully', 200));
+    }
+
 
     // Logout
     logout = async (req:Request, res:Response)=> {

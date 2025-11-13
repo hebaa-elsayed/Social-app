@@ -4,6 +4,7 @@ import { FriendshipStatusEnum, IConversation, IFriendship, IRequest, IUser } fro
 import { FriendshipRepository, UserRepository, ConversationRepository } from "../../../DB/Repositories";
 import { UserModel } from "../../../DB/Models";
 import mongoose, { FilterQuery, Types } from "mongoose";
+import { compareSync } from "bcrypt";
 
 
 export class ProfileService{
@@ -65,15 +66,33 @@ export class ProfileService{
 
     updateProfile = async (req:Request, res:Response)=> {
         const {user:{_id}} = (req as unknown as IRequest).loggedInUser
-        const {firstName, lastName, email, password, phoneNumber, gender, DOB}:IUser = req.body
+        const {firstName, lastName, phoneNumber, gender, DOB}:IUser = req.body
 
         await this.userRepo.updateOneDocument(
             {_id },
-            {$set:{firstName, lastName, email, password, phoneNumber, gender, DOB}},
+            {$set:{firstName, lastName, phoneNumber, gender, DOB}},
             {new:true}
         )
         res.json(SuccessResponse<IUser>('Profile updated successfuly', 200))
     }
+
+    updatePassword = async (req:Request, res:Response)=> {
+        const {user:{_id}} = (req as unknown as IRequest).loggedInUser
+        const {oldPassword, newPassword} = req.body
+
+        const user = await this.userRepo.findDocumentById(_id )
+        if (!user) throw new BadRequestException('User not found')
+       
+        const isMatch = compareSync(oldPassword, user.password)
+        if (!isMatch) throw new BadRequestException('Invalid password')
+        
+        user.password = newPassword
+        await user.save()
+
+        res.json(SuccessResponse('Password updated successfuly', 200))
+    }
+
+    
 
 
     getProfile = async (req:Request, res:Response)=> {

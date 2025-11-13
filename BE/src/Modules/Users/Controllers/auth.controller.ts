@@ -11,16 +11,12 @@ authController.post('/signUp', validationMiddleware(SignUpValidator), AuthServic
 authController.post('/login' ,AuthService.signIn )
 //confirm email
 authController.post('/confirm-email', AuthService.confirmEmail);
-//Forgot Password
-
-//Reset Password
-
-//Authentication with gmail
-
-//Resend confirmation email
-
-//Resend Email
-
+// enable two step verification
+authController.post('/enable-two-step-verification', authentication, AuthService.enableTwoStepVerification)
+// verify two step verification
+authController.post('/verify-two-step-verification', authentication, AuthService.verifyTwoStepVerification)
+// verify login OTP
+authController.post('/verify-login-otp', authentication, AuthService.verifyLoginOtp)
 // Logout
 authController.post('/logout', authentication, AuthService.logout)
 
