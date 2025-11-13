@@ -3,17 +3,22 @@ import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors'
 import morgan from 'morgan'
 import fs from 'fs'
+import { createHandler } from 'graphql-http/lib/use/express';
 
 import * as controllers from './Modules/controllers.index';
 import { dbConnection } from './DB/db.connection';
 import { HttpException , FailedResponse} from './Utils';
 import { ioInitializer } from './Gateways/socketIo.gateways';
-
+import { MainSchema } from './GraphQl/main.gql';
+import { authentication } from './Middleware';
+import { IRequest } from './Common';
 
 const app = express();
 
 app.use(cors())
 app.use(express.json());
+
+app.all('/graphql',authentication, createHandler({ schema: MainSchema, context: ( req ) => ({ user: (req.raw as IRequest).loggedInUser }) }))
 
 //create write stream
 const accessLogStream = fs.createWriteStream('access.log')

@@ -60,7 +60,12 @@ const userSchema = new mongoose.Schema<IUser>({
     isConfirmed: {
         type: Boolean,
         default: false
-    }
+    },
+    twoStepVerification:{
+        type: Boolean,
+        default: false
+    },
+
 })
 
 // Document middleware

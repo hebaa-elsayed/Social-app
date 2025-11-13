@@ -11,7 +11,7 @@ const blackListedRepo = new BlackListedTokenRepository(BlackListedTokenModel)
 
 export const authentication = async (req:Request,res:Response, next:NextFunction)=> {
     const {authorization : accessToken} = req.headers
-    if(!accessToken) throw next(new HttpException('Please login first', 400))
+    if(!accessToken) throw next(new BadRequestException('Please login first'))
 
     const [prefix, token] = accessToken.split(' ')
     if(prefix !== process.env.JWT_PREFIX) return res.status(401).json({message:'Invalid token'})
@@ -23,7 +23,7 @@ export const authentication = async (req:Request,res:Response, next:NextFunction
     if(blackListedToken) return res.status(401).json({message:'Your session is expired please login'})
 
     const user:IUser|null = await userRepo.findDocumentById( decodedData._id, '-password' )
-    if(!user) throw next(new BadRequestException('Please register first'));
+    if(!user) return res.status(404).json({message:'Please register first'});
     
     (req as unknown as IRequest).loggedInUser = {user, token:decodedData as JwtPayload}
     next()

@@ -9,6 +9,9 @@ profileController.get('/get-profile', authentication, profileService.getProfile)
 //  Update user profile
 profileController.put('/update-profile', authentication, profileService.updateProfile)
 
+//  Update user password
+profileController.put('/update-password', authentication, profileService.updatePassword)
+
 //  Delete user profile
 profileController.delete('/delete-account', authentication, profileService.deleteAccount)
 

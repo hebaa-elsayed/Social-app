@@ -26,6 +26,7 @@ interface IUser extends Document<mongoose.Schema.Types.ObjectId> {
     isVerified?:Boolean;
     OTPS: IOTP[];
     isConfirmed: Boolean;
+    twoStepVerification: Boolean;
 }
 
 
@@ -44,7 +45,9 @@ interface IEmailArgument {
 }
 
 interface IRequest extends Request {
-    loggedInUser:{ user: IUser , token :JwtPayload}
+    loggedInUser:{
+        user: IUser , token :JwtPayload
+}
 }
 
 interface IFriendship extends Document<mongoose.Schema.Types.ObjectId> {

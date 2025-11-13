@@ -16,7 +16,8 @@ enum ProviderEnum {
 
 enum OtpTypesEnum{
     CONFIRMATION = 'confirmation',
-    RESET_PASSWORD = 'reset-password'
+    RESET_PASSWORD = 'reset-password',
+    TWO_STEP_VERIFICATION = 'two-step-verification',
 }
 
 enum FriendshipStatusEnum{
