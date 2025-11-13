@@ -65,6 +65,10 @@ const userSchema = new mongoose.Schema<IUser>({
         type: Boolean,
         default: false
     },
+    unVerifiedEmail:{
+        type: String,
+        default: null
+    }
 
 })
 
@@ -93,13 +97,14 @@ userSchema.pre('save', function(){
 
 // Query middleware
 userSchema.post(/^find/, function(doc){
+    if(!doc) return;
     if((this as unknown as {op:string}).op == 'find'){
         doc.forEach((user:IUser)=>{
             if(user.phoneNumber){
                 user.phoneNumber = decrypt(user.phoneNumber as string)
             }
         })
-    } else {
+    } else if(doc.phoneNumber){
         doc.phoneNumber = decrypt(doc.phoneNumber as string)
     }
 })

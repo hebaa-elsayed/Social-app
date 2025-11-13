@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { IRequest, IUser, OtpTypesEnum, SignUpBodyType } from "../../../Common";
 import { UserRepository } from "../../../DB/Repositories/user.repository";
 import { UserModel } from "../../../DB/Models";
-import {encrypt , generateHash, compareHash, ConflictException, FailedResponse, SuccessResponse, BadRequestException} from "../../../Utils";
+import { generateHash, compareHash, ConflictException, SuccessResponse, BadRequestException} from "../../../Utils";
 import {localEmitter} from "../../../Utils/Services/email.utils"
 import { generateToken } from "../../../Utils/Encryption/token.utils";
 import { SignOptions } from "jsonwebtoken";
@@ -219,6 +219,69 @@ class AuthService{
         return res.status(200).json(SuccessResponse('Two step verification enabled successfully', 200));
     }
 
+    // Update password
+    updatePassword = async (req:Request, res:Response)=> {
+        const {user:{_id}} = (req as unknown as IRequest).loggedInUser
+        const {oldPassword, newPassword} = req.body
+    
+        const user = await this.userRepo.findDocumentById(_id )
+        if (!user) throw new BadRequestException('User not found')
+       
+        const isMatch = compareSync(oldPassword, user.password)
+        if (!isMatch) throw new BadRequestException('Invalid password')
+            
+        user.password = newPassword
+        await user.save()
+    
+        return res.status(200).json(SuccessResponse('Password updated successfuly', 200))
+    }
+
+    // Update email
+    updateEmail = async (req:Request, res:Response)=> {
+        const {user} = (req as unknown as IRequest).loggedInUser
+        const {newEmail} = req.body
+        
+        const isEmailExist = await this.userRepo.findOneDocument({email : newEmail})
+        if(isEmailExist) throw new ConflictException('Email already exists', {invalidEmail:newEmail})
+
+        const otp = Math.floor(Math.random() * 1000000).toString();
+        const otpHash = generateHash(otp);
+        user.unVerifiedEmail = newEmail
+        localEmitter.emit('sendEmail' , {
+            to:newEmail,
+            subject:'Verify your email',
+            content:`Your email verification OTP is ${otp}`
+        })
+        user.OTPS.push({
+            value:otpHash, 
+            expiresAt:Date.now() + 600000, 
+            otpType:OtpTypesEnum.EMAIL_VERIFICATION})
+        
+        await user.save()
+        return res.status(200).json(SuccessResponse('Email updated, please check your email for verification', 200))
+    }
+
+    // Verify email
+    verifyEmail = async (req:Request, res:Response)=> {
+        const {user} = (req as unknown as IRequest).loggedInUser
+        const {otp} = req.body
+
+        const otpRecord = user.OTPS?.find(o => o.otpType === OtpTypesEnum.EMAIL_VERIFICATION && o.expiresAt > Date.now())
+        if (!otpRecord) {return res.status(400).json({ message: 'Invalid or expired OTP.' })}
+        const matchedOtp = compareSync(otp, otpRecord.value)
+        if (!matchedOtp) {return res.status(400).json({ message: 'Invalid or expired OTP' })}
+
+        if(user.unVerifiedEmail){
+            user.email = user.unVerifiedEmail
+            user.unVerifiedEmail = null
+            user.isVerified = true
+        }
+
+        user.OTPS = (user.OTPS || []).filter(o => o !== otpRecord)
+        await user.save()
+    
+        return res.status(200).json(SuccessResponse('Email verified & updated successfully', 200))
+    }
 
     // Logout
     logout = async (req:Request, res:Response)=> {

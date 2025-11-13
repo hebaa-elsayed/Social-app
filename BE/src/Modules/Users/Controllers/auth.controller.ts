@@ -1,7 +1,8 @@
 import { Router } from "express";
 import AuthService from '../Services/auth.service'
 import { authentication, validationMiddleware } from "../../../Middleware";
-import { SignUpValidator } from "../../../Validators";
+import { SignUpValidator, verifyEmailValidator } from "../../../Validators";
+import { updateEmailValidator } from "../../../Validators";
 const authController = Router();
 
 
@@ -17,6 +18,12 @@ authController.post('/enable-two-step-verification', authentication, AuthService
 authController.post('/verify-two-step-verification', authentication, AuthService.verifyTwoStepVerification)
 // verify login OTP
 authController.post('/verify-login-otp', authentication, AuthService.verifyLoginOtp)
+// update password
+authController.put('/update-password', authentication, AuthService.updatePassword)
+// update email
+authController.put('/update-email', authentication, validationMiddleware(updateEmailValidator), AuthService.updateEmail)
+// verify email
+authController.post('/verify-email', authentication, validationMiddleware(verifyEmailValidator),AuthService.verifyEmail)
 // Logout
 authController.post('/logout', authentication, AuthService.logout)
 

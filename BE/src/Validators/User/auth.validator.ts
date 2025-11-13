@@ -41,3 +41,17 @@ export const SignUpValidator = {
 
     })
 }
+
+
+export const updateEmailValidator = {
+    body: z.object({
+        newEmail: z.email()
+    })
+}
+
+
+export const verifyEmailValidator = {
+    body: z.object({
+        otp: z.string().length(6)
+    })
+}

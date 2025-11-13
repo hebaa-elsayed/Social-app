@@ -76,24 +76,6 @@ export class ProfileService{
         res.json(SuccessResponse<IUser>('Profile updated successfuly', 200))
     }
 
-    updatePassword = async (req:Request, res:Response)=> {
-        const {user:{_id}} = (req as unknown as IRequest).loggedInUser
-        const {oldPassword, newPassword} = req.body
-
-        const user = await this.userRepo.findDocumentById(_id )
-        if (!user) throw new BadRequestException('User not found')
-       
-        const isMatch = compareSync(oldPassword, user.password)
-        if (!isMatch) throw new BadRequestException('Invalid password')
-        
-        user.password = newPassword
-        await user.save()
-
-        res.json(SuccessResponse('Password updated successfuly', 200))
-    }
-
-    
-
 
     getProfile = async (req:Request, res:Response)=> {
         const {user:{_id}} = (req as unknown as IRequest).loggedInUser
