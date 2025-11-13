@@ -8,8 +8,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^3.1.2",
     "socket.io": "^4.8.1"
-  }
+  },
+  "description": ""
 }
