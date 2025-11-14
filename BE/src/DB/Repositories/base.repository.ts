@@ -13,11 +13,11 @@ export abstract class BaseRepository<T>{
         return await this.model.findOne(filters, projection, options)
     }
 
-    async findDocumentById(id:mongoose.Schema.Types.ObjectId , projection?:ProjectionType<T>, options?:QueryOptions<T>):Promise<T | null>{
+    async findDocumentById(id:string | mongoose.Schema.Types.ObjectId , projection?:ProjectionType<T>, options?:QueryOptions<T>):Promise<T | null>{
         return await this.model.findById(id, projection, options)
     }
 
-    async deleteByIdDocument(id:mongoose.Schema.Types.ObjectId){
+    async deleteByIdDocument(id:string | mongoose.Schema.Types.ObjectId){
         return await this.model.findByIdAndDelete(id)
     }
     
@@ -29,14 +29,17 @@ export abstract class BaseRepository<T>{
         return await this.model.find(filters, projection, options)
     }
 
-    updateMultipleDocuments(){}
+    async freezeDocumentById(id:string | mongoose.Schema.Types.ObjectId){
+        return await this.model.findByIdAndUpdate(id, {isFrozen: true}, {new: true})
+    }
 
-    deleteOneDocument(){}
+    async deleteOneDocument(filters:FilterQuery<T>){
+        return await this.model.deleteOne(filters)
+    }
 
-    deleteMultipleDocuments(){}
+    async deleteDocuments(filters:FilterQuery<T>):Promise<{deletedCount?:number}>{
+        return await this.model.deleteMany(filters)
+    }
 
-    findAndUpdateDocument(){}
-
-    findAndDeleteDocument(){}
 
 }

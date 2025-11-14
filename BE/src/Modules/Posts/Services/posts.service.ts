@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from "express"
-import { PostRepository, UserRepository, FriendshipRepository } from "../../../DB/Repositories"
+import { PostRepository, UserRepository, FriendshipRepository, CommentRepository, ReactRepository } from "../../../DB/Repositories"
 import { UserModel } from "../../../DB/Models"
 import { FriendshipStatusEnum, IRequest } from "../../../Common"
 import { BadRequestException, S3ClientService, pagination } from "../../../Utils"
+import mongoose from "mongoose"
 
 
 
@@ -11,6 +12,8 @@ class PostService {
     private userRepo = new UserRepository(UserModel)
     private friendshipRepo = new FriendshipRepository()
     private S3ClientService = new S3ClientService()
+    private commentRepo = new CommentRepository()
+    private reactRepo = new ReactRepository()
 
     addPost= async (req:Request, res:Response, next:NextFunction)=>{
         const {user:{_id}} = (req as IRequest).loggedInUser
@@ -95,7 +98,55 @@ class PostService {
         })
     }
 
+    freezePost = async (req:Request, res:Response, next:NextFunction)=>{
+        const {user:{_id}} = (req as IRequest).loggedInUser
+        const {postId} = req.params
+        if(!postId) throw new BadRequestException('Invalid post id')
+        const post = await this.postRepo.findDocumentById(postId)
+        if(!post) throw new BadRequestException('Post not found')
+        if(post.ownerId.toString() !== _id.toString()) throw new BadRequestException('You are not authorized to freeze this post')
+        const frozenPost = await this.postRepo.freezeDocumentById(postId)
+        return res.status(200).json({success:true, message:"Post frozen successfully", data: frozenPost})
+    }
     
+   hardDeletePost = async (req: Request, res: Response) => {
+    const { postId } = req.params;
+    const { user: { _id } } = (req as unknown as IRequest).loggedInUser;
+
+    if (!mongoose.Types.ObjectId.isValid(postId))
+        throw new BadRequestException("Invalid post id");
+
+    const post = await this.postRepo.findDocumentById(postId);
+    if (!post) throw new BadRequestException("Post not found");
+
+    if (post.ownerId.toString() !== _id.toString())
+        throw new BadRequestException("You are not authorized to delete this post");
+
+    if (post.attachments) {
+        await this.S3ClientService.deleteBulkFilesFromS3(post.attachments);
+    }
+
+    await this.reactRepo.deleteDocuments({ refId: postId, onModel: "Post" });
+
+    const comments = await this.commentRepo.findDocuments({ refId: postId, onModel: "Post" });
+    for (const comment of comments) {
+        await this.reactRepo.deleteDocuments({ refId: comment._id, onModel: "Comment" });
+
+        const replies = await this.commentRepo.findDocuments({ refId: comment._id, onModel: "Comment" });
+        for (const reply of replies) {
+            await this.reactRepo.deleteDocuments({ refId: reply._id, onModel: "Comment" });
+            if (reply.attachment) await this.S3ClientService.deleteFileFromS3(reply.attachment);
+            await this.commentRepo.deleteByIdDocument(reply._id);
+        }
+
+        if (comment.attachment) await this.S3ClientService.deleteFileFromS3(comment.attachment);
+        await this.commentRepo.deleteByIdDocument(comment._id);
+    }
+
+    await this.postRepo.deleteByIdDocument(postId);
+
+    return res.status(200).json({success:true, message:"Post and all related data deleted successfully", data: post});
+    }
 
 
 }

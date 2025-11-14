@@ -9,4 +9,5 @@ export interface IComment extends Document<mongoose.Schema.Types.ObjectId> {
     ownerId: mongoose.Schema.Types.ObjectId;
     refId: mongoose.Schema.Types.ObjectId;
     onModel: string;
+    isFrozen: boolean;
 }

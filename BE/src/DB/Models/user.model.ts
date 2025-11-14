@@ -118,6 +118,9 @@ userSchema.post('findOneAndDelete', async function(doc){
     if(doc.coverPicture){
         await S3Service.deleteFileFromS3(doc.coverPicture)
     }
+    if(doc.attachment){
+        await S3Service.deleteFileFromS3(doc.attachment)
+    }
 }) 
 
 
