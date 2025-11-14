@@ -1,13 +1,20 @@
 import { Router } from "express";
+import { authentication, Multer } from "../../Middleware";
+import CommentService from "./Services/comments.service";
 const commentController = Router();
 
-//  Add comment
+//  create comment
+commentController.post('/create-comment', authentication,Multer().single('attachment'), CommentService.createComment)
 //  Update comment
-//  Delete comment
-//  Get all comments
+commentController.put('/update-comment/:commentId', authentication,Multer().single('attachment'), CommentService.updateComment)
 //  Get comment by id
-//  Get all comments for specific post
-//  Get all comments for specific user
+commentController.get('/get-comment-by-id/:commentId', authentication, CommentService.getComment)
+//  Get comment with replies
+commentController.get('/get-comment-with-replies/:commentId', authentication, CommentService.getCommentWithReplies)
+//  Hard delete comment
+commentController.delete('/hard-delete-comment/:commentId', authentication, CommentService.hardDeleteComment)
+//  Freeze comment
+commentController.patch('/freeze-comment/:commentId', authentication, CommentService.freezeComment)
 
 
 export { commentController };

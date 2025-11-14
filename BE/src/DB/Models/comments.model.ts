@@ -19,6 +19,10 @@ const commentSchema = new mongoose.Schema({
         type: String,
         required: true,
         enum: ['Post', 'Comment']
+    },
+    isFrozen: {
+        type: Boolean,
+        default: false
     }
 })
 

@@ -9,4 +9,5 @@ export interface IPost extends Document<mongoose.Schema.Types.ObjectId> {
     ownerId: mongoose.Schema.Types.ObjectId;
     allowComments: boolean;
     tags:string[];
+    isFrozen: boolean;
 }

@@ -20,7 +20,11 @@ const postSchema = new mongoose.Schema<IPost>({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
         }
-    ]    
+    ] ,
+    isFrozen: {
+        type: Boolean,
+        default: false
+    }   
 })
 
 postSchema.plugin(mongoosePaginate)
