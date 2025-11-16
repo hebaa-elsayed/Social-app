@@ -1,10 +1,20 @@
 
 const baseURL = 'http://localhost:3000'
-const token = localStorage.getItem("token");
-
 const JWT_PREFIX = "social-app"
+function getToken() {
+    const token = localStorage.getItem("token")
+    if(!token){
+        alert("Please login first")
+        window.location.href = "/"
+        throw new Error("Please login first")
+    }
+    return token
+}
+
+
 
 let globalProfile = {};
+const token = getToken()
 const headers = {
     'Content-Type': 'application/json; charset=UTF-8',
     'authorization': `${JWT_PREFIX} ${token}`
@@ -20,9 +30,35 @@ clientIo.on('connected', ({user})=>{
     globalProfile = user
 })
 
+// get online status 
+clientIo.on("online-users", users=>{
+    $(".closeSpan").text("🔴").show();
+    users.forEach(id => {
+        $(`.chatUser[data-user-id='${id}'] .closeSpan`).text("🟢").show();
+    });
+})
+
+// get typing status
+clientIo.on("typing", (data)=>{
+    if (data.from !== globalProfile._id){
+        $("#typingIndicator").text("typing...");
+        setTimeout(()=>{
+            $("#typingIndicator").text("");
+        }, 200000)
+    }    
+})
+
 clientIo.on("disconnected_user", data => {
     console.log({ data });
 })
+
+$("#messageBody").on("input", function(){
+    const targetUserId = $('.chatUser.active').data('userId')
+    if(targetUserId){
+        clientIo.emit('typing', {targetUserId})
+    }
+})
+
 
 //images links
 let avatar = './avatar/Avatar-No-Background.png'
@@ -146,11 +182,11 @@ function showUsersData(users = []) {
 
         let imagePath = avatar;
         cartonna += `
-        <div onclick="displayChatUser('${friend?._id}')" class="chatUser my-2">
+        <div onclick="displayChatUser('${friend._id}')" class="chatUser my-2" data-user-id="${friend._id}">
         <img class="chatImage" src="${imagePath}" alt="" srcset="">
         <span class="ps-2">${friend?.firstName}  ${friend?.lastName}</span>
-        <span id="${"c_" + users[i]._id}" class="ps-2 closeSpan">
-           🟢
+        <span id="${"c_" + friend._id}" class="ps-2 closeSpan">
+            🟢
         </span>
         </div>
         

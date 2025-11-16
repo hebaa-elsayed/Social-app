@@ -35,6 +35,7 @@ function socketDisconnection (socket: Socket) {
             if(!userTabs.length) connectedSockets.delete(userId)
         }
         socket.broadcast.emit('user-disconnected', {userId, socketId: socket.id})
+        socket.broadcast.emit("online-users", [...connectedSockets.keys()])
     })
 }
 
@@ -47,7 +48,13 @@ export const ioInitializer = (server : HttpServer) => {
    
    
     io.on('connection', (socket: Socket) => {
+        socket.join(socket.data.userId);
+        io?.emit("online-users", [...connectedSockets.keys()])
 
+       socket.on("typing", (data)=>{
+            const targetUserId = data.targetUserId;
+            io?.to(targetUserId).emit("typing", {from: socket.data.userId});
+        })
         ChatInitiation(socket)
         socketDisconnection(socket)
     })
