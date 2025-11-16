@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authentication, Multer } from "../../../Middleware";
+import { authentication, Multer, blockCheckMiddleware } from "../../../Middleware";
 import profileService  from "../Services/profile.service";
 const profileController = Router();
 
@@ -28,14 +28,27 @@ profileController.post('/renew-signed-url', authentication, profileService.renew
 // profileController.post('/large-profile-picture', authentication, Multer().single('profilePicture'),profileService.uploadLargeProfilePicture)
 
 //  Send friendship request
-profileController.post('/send-friendship-request', authentication, profileService.sendFriendshipRequest)
+profileController.post('/send-friendship-request', authentication, blockCheckMiddleware, profileService.sendFriendshipRequest)
 
 // List friendship requests
 profileController.get('/list-friend-requests', authentication, profileService.listRequests)
 
 // Respond to friendship request
-profileController.patch('/respond-to-friendship-request', authentication, profileService.respondToFriendshipRequest)
+profileController.patch('/respond-to-friendship-request', authentication, blockCheckMiddleware, profileService.respondToFriendshipRequest)
+
 // Create group
-profileController.post('/create-group', authentication, profileService.createGroup)
+profileController.post('/create-group', authentication, blockCheckMiddleware, profileService.createGroup)
+
+// Block user
+profileController.patch('/block', authentication, profileService.blockUser)
+
+// Unblock user
+profileController.patch('/unblock', authentication, profileService.unblockUser)
+
+// Unfriend user
+profileController.patch('/unfriend', authentication, blockCheckMiddleware, profileService.unFriend)
+
+// Delete friend request
+profileController.delete('/delete-friend-request/:friendRequestId', authentication, profileService.deleteFriendRequest)
 
 export { profileController };

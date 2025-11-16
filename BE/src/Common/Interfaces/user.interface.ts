@@ -28,6 +28,7 @@ interface IUser extends Document<mongoose.Schema.Types.ObjectId> {
     isConfirmed: Boolean;
     twoStepVerification: Boolean;
     unVerifiedEmail?:string | null;
+    blockedUsers:mongoose.Schema.Types.ObjectId[];
 }
 
 

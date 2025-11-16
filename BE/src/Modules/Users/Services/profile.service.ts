@@ -179,7 +179,64 @@ export class ProfileService{
         res.json(SuccessResponse('Group created successfuly', 200, group))
     }
 
-}
+    blockUser = async (req:Request, res:Response)=>{
+        const {user:{_id}} = (req as IRequest).loggedInUser
+        const {blockUserId} = req.body
+
+        if(!mongoose.Types.ObjectId.isValid(blockUserId)) throw new BadRequestException('Invalid user id to block')
+        if(_id.toString() === blockUserId) throw new BadRequestException('You cannot block yourself')
+
+        const user = await this.userRepo.findDocumentById(_id)
+        if (!user) throw new BadRequestException('User not found')
+
+        if(!user.blockedUsers.includes(blockUserId)){
+            user.blockedUsers.push(blockUserId) 
+            await user.save()}
+
+        res.json(SuccessResponse('User blocked successfuly', 200))
+    }
+
+    unblockUser = async (req:Request, res:Response)=>{
+        const {user:{_id}} = (req as IRequest).loggedInUser
+        const {unblockUserId} = req.body
+
+        if(!mongoose.Types.ObjectId.isValid(unblockUserId)) throw new BadRequestException('Invalid user id to unblock')
+
+        const user = await this.userRepo.findDocumentById(_id)
+        if (!user) throw new BadRequestException('User not found')
+
+        user.blockedUsers = user.blockedUsers.filter(u=> u.toString() !== unblockUserId)
+        await user.save()
+
+        res.json(SuccessResponse('User unblocked successfuly', 200))
+    }
+
+    unFriend = async (req:Request, res:Response)=>{
+        const {user:{_id}} = (req as IRequest).loggedInUser
+        const {friendId} = req.body
+
+        const friendShip = await this.friendshipRepo.findOneDocument({$or:[{requestFromId:_id, requestToId:friendId},{requestFromId:friendId, requestToId:_id}, {status:FriendshipStatusEnum.ACCEPTED}]})
+        if (!friendShip) throw new BadRequestException('Friendship not found')
+
+        await this.friendshipRepo.deleteByIdDocument(friendShip._id)
+
+        res.json(SuccessResponse('User unfriended successfuly', 200))
+    }
+
+    deleteFriendRequest = async (req:Request, res:Response)=>{
+        const {user:{_id}} = (req as IRequest).loggedInUser
+        const {friendRequestId} = req.params
+
+        const friendRequest = await this.friendshipRepo.findDocumentById(friendRequestId)
+        if (!friendRequest) throw new BadRequestException('Friend request not found')
+
+        if(friendRequest.requestFromId.toString() !== _id.toString() ) throw new BadRequestException('Only the person who sent the friend request can delete it')
+        await this.friendshipRepo.deleteByIdDocument(friendRequestId) 
+
+        res.json(SuccessResponse('Friend request deleted successfuly', 200))
+    }
+
+    }
 
 
 

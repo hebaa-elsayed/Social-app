@@ -1,5 +1,1 @@
-[0mPUT /api/posts/freeze/69151ec832be6392834310bf [32m200[0m 200.878 ms - 310[0m
-[0mDELETE /api/posts/delete/6915192e57a40d6627493a06 [33m400[0m 7.048 ms - 80[0m
-[0mDELETE /api/posts/delete/6915192e57a40d6627493a06 [33m400[0m 35.224 ms - 104[0m
-[0mDELETE /api/posts/delete/69151ec832be6392834310bf [32m200[0m 1226.264 ms - 332[0m
-[0mDELETE /api/posts/delete/69151ec832be6392834310bf [33m400[0m 18.364 ms - 76[0m
+[0mDELETE /api/users/delete-friend-request/6919c3e9d9e2a130323a8616 [32m200[0m 83.505 ms - 94[0m
