@@ -1,6 +1,5 @@
 import { Socket } from "socket.io"
 import { ConversationRepository, MessageRepository } from "../../../DB/Repositories"
-import { IConversation } from "../../../Common"
 import { getIo } from "../../../Gateways/socketIo.gateways"
 
 export class ChatService {
