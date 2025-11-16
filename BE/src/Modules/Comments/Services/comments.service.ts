@@ -1,15 +1,15 @@
-import { CommentRepository } from "../../../DB/Repositories"
-import { BadRequestException, SuccessResponse } from "../../../Utils"
+import { CommentRepository , UserRepository, ReactRepository} from "../../../DB/Repositories"
+import { UserModel } from "../../../DB/Models"
+import { BadRequestException, SuccessResponse , S3ClientService} from "../../../Utils"
 import { Request, Response } from "express"
 import { IRequest } from "../../../Common"
 import mongoose from "mongoose"
-import {S3ClientService} from "../../../Utils/Services/s3-client.utils"
-import { ReactRepository } from "../../../DB/Repositories/react.repository"
 
 class CommentService{
     private commentRepo = new CommentRepository()
     private s3Service = new S3ClientService()
     private reactRepo = new ReactRepository()
+    private userRepo = new UserRepository(UserModel)
 
     createComment = async (req:Request, res:Response)=>{
         const {user:{_id}} = (req as unknown as IRequest).loggedInUser
@@ -20,7 +20,9 @@ class CommentService{
             attachment = uploaded.url
         }
         if(!['Post', 'Comment'].includes(onModel)) throw new BadRequestException('Invalid model')
+
         const newComment = await this.commentRepo.createNewDocument({content,attachment, refId, onModel, ownerId: _id})
+        
         return res.status(201).json(SuccessResponse('Comment created successfully', 201, newComment))
     }
 
@@ -44,6 +46,7 @@ class CommentService{
         comment.content = content ?? comment.content
         comment.attachment = attachment || comment.attachment
         await comment.save()
+        
         return res.status(200).json(SuccessResponse('Comment updated successfully', 200, comment))
     }
 
