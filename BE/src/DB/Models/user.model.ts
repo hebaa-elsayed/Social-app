@@ -68,7 +68,11 @@ const userSchema = new mongoose.Schema<IUser>({
     unVerifiedEmail:{
         type: String,
         default: null
-    }
+    },
+    blockedUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 
 })
 
