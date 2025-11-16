@@ -35,3 +35,14 @@ export function FailedResponse(
         }
     }
 }
+
+
+export const extractTags = (content:string): string[]=>{
+    const regex = /@([a-zA-Z0-9._]+)/g
+    const tags = []
+    let match
+    while((match = regex.exec(content)) !== null){
+        tags.push(match[1])
+    }
+    return tags;
+}

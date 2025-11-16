@@ -2,9 +2,9 @@ import { NextFunction, Request, Response } from "express"
 import { PostRepository, UserRepository, FriendshipRepository, CommentRepository, ReactRepository } from "../../../DB/Repositories"
 import { UserModel } from "../../../DB/Models"
 import { FriendshipStatusEnum, IRequest } from "../../../Common"
-import { BadRequestException, S3ClientService, pagination } from "../../../Utils"
+import { BadRequestException, S3ClientService, pagination, extractTags } from "../../../Utils"
 import mongoose from "mongoose"
-
+import sendEmailService from "../../../Utils/Services/send-email-service.utils"
 
 
 class PostService {
@@ -25,7 +25,7 @@ class PostService {
         let uniqueTags: string[] = []  
         if(tags){
             const users = await this.userRepo.findDocuments({_id: {$in: tags}})
-            if(users.length !== tags.length) throw new BadRequestException("Invalid tags")
+            if(users.length !== tags.length) throw new BadRequestException("Invalid tags===")
         
             const friends = await this.friendshipRepo.findDocuments({
                 status:FriendshipStatusEnum.ACCEPTED, 
@@ -52,6 +52,12 @@ class PostService {
             allowComments,
             tags: uniqueTags   
         })
+        
+        if(tags.length > 0){
+            const taggedUsers = await this.userRepo.findDocuments({_id: {$in: tags}})
+            const emails = taggedUsers.map((u) => u.email)
+            await sendEmailService.sendTaggedEmail(emails, `${process.env.FRONTEND_URL}/posts/${post._id}`)   
+        }
         return res.status(201).json({success:true, message:"Post added successfully", data: post})
     }
 

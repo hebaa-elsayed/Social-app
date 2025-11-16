@@ -4,9 +4,9 @@ import CommentService from "./Services/comments.service";
 const commentController = Router();
 
 //  create comment
-commentController.post('/create-comment', authentication,blockCheckMiddleware,Multer().single('attachment'), CommentService.createComment)
+commentController.post('/create-comment', authentication,Multer().single('attachment'), CommentService.createComment)
 //  Update comment
-commentController.put('/update-comment/:commentId', authentication,blockCheckMiddleware,Multer().single('attachment'), CommentService.updateComment)
+commentController.put('/update-comment/:commentId', authentication,Multer().single('attachment'), CommentService.updateComment)
 //  Get comment by id
 commentController.get('/get-comment-by-id/:commentId', authentication,blockCheckMiddleware, CommentService.getComment)
 //  Get comment with replies

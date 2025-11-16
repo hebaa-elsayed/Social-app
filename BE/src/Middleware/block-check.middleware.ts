@@ -8,7 +8,7 @@ const userRepo = new UserRepository(UserModel)
 
 export const blockCheckMiddleware = async (req:Request, res:Response, next:NextFunction)=>{
     const {user:{_id}} = (req as IRequest).loggedInUser
-    const targetUserId = req.body.targetUserId || req.params.targetUserId || req.query.userId || req.body.requestToId || req.body.requestFromId 
+    const targetUserId = req.body.targetUserId || req.params.targetUserId || req.query.commentId || req.body.requestToId || req.body.requestFromId || req.body.tags
 
     if(!targetUserId) return next();
 
